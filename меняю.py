@@ -21,11 +21,10 @@ URLIST = {'https://news.yandex.ru/':'data-counter=".*">(.*?)</a></h2>',
 
 CLEAR_LIST = ['.',',',':','»','«', '"']
 
-CLEAR_COMMAND: str = 'asd'#{
-#     'nt': 'cls',
-#     'posix': 'clear'
-# }.get(os.name, lambda x: None)
-# clear_command = 'clear'
+CLEAR_COMMAND: str = {
+    'nt': 'cls',
+    'posix': 'clear'
+}.get(os.name, lambda x: None)
 
 def clear_str(s1, li):
         s2 = s1
@@ -61,6 +60,18 @@ class News:
             pass
         return s
 
+    def find_news_by_word(self, word, limit = 6):
+        cococo = 0
+        for i in self.rawtitles:
+            ii = []
+            for j in clear_str(i, CLEAR_LIST).split():
+                ii.append(morph.parse(j)[0].normal_form)
+            if word in ii:
+                yield i
+                cococo +=1
+            if cococo >= limit:
+                break
+
 class Data:
     def __init__(self, news: News) -> None:
         self.words_dict: dict = self.transform_news_to_dict(news)
@@ -89,7 +100,6 @@ class Data:
                     ans[ind+1] = ans[ind]
                     ans[ind] = i
         return ans
-
 
 class A:
     def __init__(self, ans) -> None:
@@ -128,7 +138,6 @@ class A:
         return status
     
     def draw(self) -> None:
-        os.system(CLEAR_COMMAND)
         print('{0:_>2}|{1:_^13}|{2:_^13}'.format(" №", "слово", "перемещение"))
         
         for i in range(KVO):
@@ -150,6 +159,7 @@ while True:
     
     a = A(ans)
     status = a.get_status()
+    os.system(CLEAR_COMMAND)
     a.draw()
     a.write()
     
@@ -169,20 +179,9 @@ while True:
                 uppp = tem
                 ind = i
     print(f'Рост {status[ind]} показало слово "{ans[ind]}"')
-    
-    # os.system(clear_command)    
-    cococo = 0
-    for i in news.rawtitles:
-        print(f'{i=}')
-        ii = []
-        for j in clear_str(i, CLEAR_LIST).split():
-            ii.append(morph.parse(j)[0].normal_form)
-        if ans[ind] in ii:
-            print(i)
-            cococo +=1
-        if cococo >=6:
-            break
-    # exit('ok')
+
+    # печатаем новости со словом, показавшим рост
+    for new in news.find_news_by_word(ans[ind], 6): print(new)
         
     time.sleep(30)
     
