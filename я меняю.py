@@ -36,28 +36,26 @@ def clear_str(s1, li):
 
 class News:
     def __init__(self) -> None:
+        self.rawtitles = []
         self.all = self.get_al()
     
-    @staticmethod
-    def get_al():  # долгая функция
+    def get_al(self):  # долгая функция
         al = ''
         for i in URLIST.keys():
-            s = News.parce(i,URLIST[i])
+            s = self.parce(i,URLIST[i])
             if s == 'FIASCO':
-                s = News.parce(i,URLIST[i])
+                s = self.parce(i,URLIST[i])
             if s != 'FIASCO':
                 al += s + ' '
         return clear_str(al, CLEAR_LIST)
 
-    @staticmethod
-    def parce(url, regexp):
-        global rawtitles
+    def parce(self, url, regexp):
         s = 'FIASCO'
         try:
             r = requests.get(url)
             if r.status_code == 200:
                 a = (re.findall(regexp, r.text))
-                rawtitles += a 
+                self.rawtitles += a 
                 s = ' '.join(a)
         except:
             pass
@@ -66,6 +64,7 @@ class News:
 class Data:
     def __init__(self, news: News) -> None:
         self.words_dict: dict = self.transform_news_to_dict(news)
+
     def transform_news_to_dict(self, news: News):
         di = {}
         for ii in news.all.split():
@@ -79,39 +78,37 @@ class Data:
                     else:
                         di[i] = di[i] + 1
         return di
-    def draw(self):
-        os.system(CLEAR_COMMAND)
-        print('{0:_>2}|{1:_^13}|{2:_^13}'.format(" №", "слово", "перемещение"))
-        
-        for i in range(KVO):
-            t = ''
-            if status[i][0] == '+':
-                t = '\033[0;42m'
-            elif status[i][0] == '-':
-                t = '\033[0;41m'
-            else:
-                t = '\033[0m'
-            print(t+('{0:2d}|{1:13}|{2:^13}'.format(i+1, ans[i].upper(), status[i]))+'\033[0m')
+    
+    def get_ans(self):
+        self.words_dict['0'] = 0
+        ans = ['0']*(LOOKAT +1)
+        for i in self.words_dict.keys():
+            for j in range(LOOKAT):
+                ind = LOOKAT-j-1
+                if self.words_dict[i] >= self.words_dict[ans[ind]]:
+                    ans[ind+1] = ans[ind]
+                    ans[ind] = i
+        return ans
 
 
 class A:
-    def __init__(self) -> None:
-        self.lastd = self.read_last()
+    def __init__(self, ans) -> None:
+        self.read_last()
+        self.ans = ans
+        self.status = self.get_status()
         
-    @staticmethod
-    def read_last() -> dict:
+    def read_last(self) -> dict:
         try:
             with open('last.txt', 'r') as f:
                 swr = f.read()
-            return eval(swr)
+            self.lastd = eval(swr)
         except:
-            return {}
+            self.lastd = {}
     
-    @staticmethod
-    def write(ans) -> None:
+    def write(self) -> None:
         swr = "{"
         for i in range(LOOKAT):
-            swr += f"'{ans[i]}':{str(i)},"
+            swr += f"'{self.ans[i]}':{str(i)},"
         swr = swr[:-1]+'}'
 
         with open('last.txt','w', encoding='utf-8') as f:
@@ -120,7 +117,7 @@ class A:
     def get_status(self) -> dict:
         status = {}
         for i in range(KVO):
-            ch = self.lastd.get(ans[i], -1337) - i
+            ch = self.lastd.get(self.ans[i], -1337) - i
             if ch < -1000:
                 status[i] = 'NEW'
             else:
@@ -129,30 +126,32 @@ class A:
                 else:
                     status[i] = str(ch)
         return status
+    
+    def draw(self) -> None:
+        os.system(CLEAR_COMMAND)
+        print('{0:_>2}|{1:_^13}|{2:_^13}'.format(" №", "слово", "перемещение"))
+        
+        for i in range(KVO):
+            t = ''
+            if self.status[i][0] == '+':
+                t = '\033[0;42m'
+            elif self.status[i][0] == '-':
+                t = '\033[0;41m'
+            else:
+                t = '\033[0m'
+            print(t+('{0:2d}|{1:13}|{2:^13}'.format(i+1, self.ans[i].upper(), self.status[i]))+'\033[0m')
 
 
 
 while True:
-    rawtitles = []
-    
-
     news = News()
     data = Data(news)
-    di = data.words_dict
-
-    di['0'] = 0
-    ans = ['0']*(LOOKAT +1)
-    for i in di.keys():
-        for j in range(LOOKAT):
-            ind = LOOKAT-j-1
-            if di[i] >= di[ans[ind]]:
-                ans[ind+1] = ans[ind]
-                ans[ind] = i
+    ans = data.get_ans()
     
-    a = A()
+    a = A(ans)
     status = a.get_status()
-    Data.draw(status)
-    a.write(ans)
+    a.draw()
+    a.write()
     
     time.sleep(77)
     
@@ -162,7 +161,6 @@ while True:
     
     for i in range(KVO):
         if status[i] == 'NEW':
-            uppp = 1337
             ind = i
             break
         else:
@@ -174,7 +172,8 @@ while True:
     
     # os.system(clear_command)    
     cococo = 0
-    for i in rawtitles:
+    for i in news.rawtitles:
+        print(f'{i=}')
         ii = []
         for j in clear_str(i, CLEAR_LIST).split():
             ii.append(morph.parse(j)[0].normal_form)
@@ -183,7 +182,7 @@ while True:
             cococo +=1
         if cococo >=6:
             break
-    exit('ok')
+    # exit('ok')
         
     time.sleep(30)
     
