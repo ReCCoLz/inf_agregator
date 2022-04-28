@@ -71,18 +71,14 @@ for text in get_data():
         with open('data_news.txt', 'a', encoding='utf-8') as file:
             file.write(text)
             file.write('\n')
-            file.write('\n') 
 
 f = open('data_news.txt', "r", encoding='utf-8')
 text=f.read()
 text = text.lower()
 spec_chars = string.punctuation + '\n'
-text = "".join([ch for ch in text if ch not in spec_chars])
-
+text = "".join([ch for ch in text if ch not in spec_chars and ch not in stopwords.words()])
 text_tokens = word_tokenize(text)
-
 text = nltk.Text(text_tokens)
 fdist = FreqDist(text)
-remove_sw = [word for word in text_tokens if not word in stopwords.words()]
 
-print(remove_sw.most_common(5))
+print(fdist.most_common(5))
