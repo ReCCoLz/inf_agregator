@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # coding:utf8
 
+from tkinter.tix import Tree
 import requests
 import re
 import os
@@ -36,20 +37,6 @@ def clear_str(s1, li):
 
 
 class Word:
-    def __init__(self, name, status) -> None:
-        self.name = name
-        self.status = status
-
-
-class Words:
-    def __init__(self, **words) -> None:
-        self.all = sorted(
-            [Word(name, status) for name, status in words.items()],
-            key=lambda word: word.status,
-            reverse=True
-        )[:LOOKAT]
-
-class A:
     def __init__(self, name) -> None:
         self.name = name
     
@@ -63,17 +50,17 @@ class A:
             else:
                 self.status = str(ch)
 
-class B:
-    def __init__(self, words:Words) -> None:
-        self.all = [A(word.name) for word in words.all]
-
+class Words:
+    def __init__(self, words:dict) -> None:
+        words = sorted(words.items(), key=lambda x: x[1], reverse=True)[:LOOKAT]
+        self.all = [Word(word[0]) for word in words]
+    
     def get_status(self, lastd: dict) -> None:
         for word in self.all:
             word.get_status(lastd)
     
     def __getitem__(self, key:int):
         return self.all[key]
-
 
 class News:
     def __init__(self) -> None:
@@ -133,11 +120,11 @@ class News:
                         di[i] = 1
                     else:
                         di[i] = di[i] + 1
-        return Words(**di)
+        return Words(di)
 
 
 class Data:
-    def __init__(self, words:B) -> None:
+    def __init__(self, words:Words) -> None:
         self.read_last()
         self.words = words
         self.words.get_status(self.lastd)
@@ -175,26 +162,22 @@ class Data:
 
     def get_grouwth_word(self) -> Word:
         uppp = -1
-        ind = -1
 
-        for i in range(KVO):
-            if self.words[i].status == 'NEW':
-                ind = i
-                break
-            else:
-                tem = int(self.words[i].status)
-                if tem > uppp:
-                    uppp = tem
-                    ind = i
-        return Word(self.words[ind].name, self.words[i].status)
+        for word in self.words[:KVO]:
+            if word.status == 'NEW':
+                return word
+            tem = int(word.status)
+            if tem > uppp:
+                uppp = tem
+                res = word
+        return res
 
 
 while True:
     news = News()
 
     words: Words = news.get_all_words()
-    b = B(words)
-    data = Data(b)
+    data = Data(words)
     # os.system(CLEAR_COMMAND)
     data.print()
     data.write_to_file()
@@ -203,7 +186,7 @@ while True:
 
     # Определяем самое поднявшееся слово
     grouwth_word = data.get_grouwth_word()
-    # print(f'Рост {grouwth_word.status} показало слово "{grouwth_word.name}"')
+    print(f'Рост {grouwth_word.status} показало слово "{grouwth_word.name}"')
 
     # печатаем новости со словом, показавшим рост
     for new in news.find_news_by_word(grouwth_word.name, 6):
