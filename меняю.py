@@ -39,7 +39,7 @@ def clear_str(s1, li):
 class Word:
     def __init__(self, name) -> None:
         self.name = name
-    
+
     def get_status(self, lastd: dict) -> str:
         if self.name not in lastd:
             self.status = 'NEW'
@@ -50,17 +50,20 @@ class Word:
             else:
                 self.status = str(ch)
 
+
 class Words:
-    def __init__(self, words:dict) -> None:
-        words = sorted(words.items(), key=lambda x: x[1], reverse=True)[:LOOKAT]
+    def __init__(self, words: dict) -> None:
+        words = sorted(words.items(), key=lambda x: x[1], reverse=True)[
+            :LOOKAT]
         self.all = [Word(word[0]) for word in words]
-    
+
     def get_status(self, lastd: dict) -> None:
         for word in self.all:
             word.get_status(lastd)
-    
-    def __getitem__(self, key:int):
+
+    def __getitem__(self, key: int):
         return self.all[key]
+
 
 class News:
     def __init__(self) -> None:
@@ -124,7 +127,7 @@ class News:
 
 
 class Data:
-    def __init__(self, words:Words) -> None:
+    def __init__(self, words: Words) -> None:
         self.read_last()
         self.words = words
         self.words.get_status(self.lastd)
@@ -146,8 +149,9 @@ class Data:
         with open('last.txt', 'w', encoding='utf-8') as f:
             f.write(swr)
 
-    def print(self) -> None:
-        print('{0:_>2}|{1:_^13}|{2:_^13}'.format(" №", "слово", "перемещение"))
+    def __str__(self) -> str:
+        result = '{0:_>2}|{1:_^13}|{2:_^13}\n'.format(
+            " №", "слово", "перемещение")
 
         for i in range(KVO):
             t = ''
@@ -157,8 +161,16 @@ class Data:
                 t = '\033[0;41m'
             else:
                 t = '\033[0m'
-            print(t+('{0:2d}|{1:13}|{2:^13}'.format(i+1,
-                  self.words[i].name.upper(), self.words[i].status))+'\033[0m')
+
+            result += t+(
+                '{0:2d}|{1:13}|{2:^13}'.format(
+                    i+1,
+                    self.words[i].name.upper(),
+                    self.words[i].status
+                )
+            )+'\033[0m\n'
+
+        return result
 
     def get_grouwth_word(self) -> Word:
         uppp = -1
@@ -179,7 +191,7 @@ while True:
     words: Words = news.get_all_words()
     data = Data(words)
     # os.system(CLEAR_COMMAND)
-    data.print()
+    print(data)
     data.write_to_file()
 
     # time.sleep(77)
