@@ -20,10 +20,8 @@ URLIST = {'https://news.yandex.ru/': 'data-counter=".*">(.*?)</a></h2>',
           'https://news.rambler.ru/?utm_source=head&utm_campaign=self_promo&utm_medium=nav&utm_content=main': 'data-blocks="teaser::[0987654321]+::content">\n([^><"/]*?)\n',
           'https://rg.ru/': '<span class="b-link__inner-text">(.*?)</span>',
           'http://www.interfax.ru': '<a href=".*?" data-vr-headline>(.*?)</a></H3></div>'}
-
 CLEAR_LIST = ['.', ',', ':', '»', '«', '"']
 TEST = True
-
 CLEAR_COMMAND: str = {
     'nt': 'cls',
     'posix': 'clear'
@@ -51,8 +49,30 @@ class Words:
             reverse=True
         )[:LOOKAT]
 
-    def get_names(self) -> list:
-        return [word.name for word in self.all]
+class A:
+    def __init__(self, name) -> None:
+        self.name = name
+    
+    def get_status(self, lastd: dict) -> str:
+        if self.name not in lastd:
+            self.status = 'NEW'
+        else:
+            ch = lastd.get(self.name)
+            if ch > 0:
+                self.status = '+'+str(ch)
+            else:
+                self.status = str(ch)
+
+class B:
+    def __init__(self, words:Words) -> None:
+        self.all = [A(word.name) for word in words.all]
+
+    def get_status(self, lastd: dict) -> None:
+        for word in self.all:
+            word.get_status(lastd)
+    
+    def __getitem__(self, key:int):
+        return self.all[key]
 
 
 class News:
@@ -117,10 +137,10 @@ class News:
 
 
 class Data:
-    def __init__(self, words) -> None:
+    def __init__(self, words:B) -> None:
         self.read_last()
         self.words = words
-        self.status = self.get_status()
+        self.words.get_status(self.lastd)
 
     def read_last(self) -> dict:
         try:
@@ -133,60 +153,48 @@ class Data:
     def write_to_file(self) -> None:
         swr = "{"
         for i in range(LOOKAT):
-            swr += f"'{self.words[i]}':{str(i)},"
+            swr += f"'{self.words[i].name}':{str(i)},"
         swr = swr[:-1]+'}'
 
         with open('last.txt', 'w', encoding='utf-8') as f:
             f.write(swr)
-
-    def get_status(self) -> dict:
-        status = {}
-        for i in range(KVO):
-            ch = self.lastd.get(self.words[i], -1337) - i
-            if ch < -1000:
-                status[i] = 'NEW'
-            else:
-                if ch > 0:
-                    status[i] = '+'+str(ch)
-                else:
-                    status[i] = str(ch)
-        return status
 
     def print(self) -> None:
         print('{0:_>2}|{1:_^13}|{2:_^13}'.format(" №", "слово", "перемещение"))
 
         for i in range(KVO):
             t = ''
-            if self.status[i][0] == '+':
+            if self.words[i].status[0] == '+':
                 t = '\033[0;42m'
-            elif self.status[i][0] == '-':
+            elif self.words[i].status[0] == '-':
                 t = '\033[0;41m'
             else:
                 t = '\033[0m'
             print(t+('{0:2d}|{1:13}|{2:^13}'.format(i+1,
-                  self.words[i].upper(), self.status[i]))+'\033[0m')
+                  self.words[i].name.upper(), self.words[i].status))+'\033[0m')
 
     def get_grouwth_word(self) -> Word:
         uppp = -1
         ind = -1
 
         for i in range(KVO):
-            if self.status[i] == 'NEW':
+            if self.words[i].status == 'NEW':
                 ind = i
                 break
             else:
-                tem = int(self.status[i])
+                tem = int(self.words[i].status)
                 if tem > uppp:
                     uppp = tem
                     ind = i
-        return Word(self.words[ind], self.status[ind])
+        return Word(self.words[ind].name, self.words[i].status)
+
 
 while True:
     news = News()
 
     words: Words = news.get_all_words()
-    w_names: list = words.get_names()
-    data = Data(w_names)
+    b = B(words)
+    data = Data(b)
     # os.system(CLEAR_COMMAND)
     data.print()
     data.write_to_file()
@@ -195,7 +203,7 @@ while True:
 
     # Определяем самое поднявшееся слово
     grouwth_word = data.get_grouwth_word()
-    print(f'Рост {grouwth_word.status} показало слово "{grouwth_word.name}"')
+    # print(f'Рост {grouwth_word.status} показало слово "{grouwth_word.name}"')
 
     # печатаем новости со словом, показавшим рост
     for new in news.find_news_by_word(grouwth_word.name, 6):
