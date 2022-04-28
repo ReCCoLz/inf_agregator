@@ -166,6 +166,20 @@ class Data:
             print(t+('{0:2d}|{1:13}|{2:^13}'.format(i+1,
                   self.words[i].upper(), self.status[i]))+'\033[0m')
 
+    def get_grouwth_word(self) -> Word:
+        uppp = -1
+        ind = -1
+
+        for i in range(KVO):
+            if self.status[i] == 'NEW':
+                ind = i
+                break
+            else:
+                tem = int(self.status[i])
+                if tem > uppp:
+                    uppp = tem
+                    ind = i
+        return Word(self.words[ind], self.status[ind])
 
 while True:
     news = News()
@@ -173,30 +187,18 @@ while True:
     words: Words = news.get_all_words()
     w_names: list = words.get_names()
     data = Data(w_names)
-    status = data.status
     # os.system(CLEAR_COMMAND)
     data.print()
     data.write_to_file()
 
-    time.sleep(77)
+    # time.sleep(77)
 
     # Определяем самое поднявшееся слово
-    uppp = -1
-    ind = -1
-
-    for i in range(KVO):
-        if status[i] == 'NEW':
-            ind = i
-            break
-        else:
-            tem = int(status[i])
-            if tem > uppp:
-                uppp = tem
-                ind = i
-    print(f'Рост {status[ind]} показало слово "{w_names[ind]}"')
+    grouwth_word = data.get_grouwth_word()
+    print(f'Рост {grouwth_word.status} показало слово "{grouwth_word.name}"')
 
     # печатаем новости со словом, показавшим рост
-    for new in news.find_news_by_word(w_names[ind], 6):
+    for new in news.find_news_by_word(grouwth_word.name, 6):
         print(new)
 
     time.sleep(30)
