@@ -61,9 +61,11 @@ class News:
         self.all = self.get_al()
 
     def get_al(self):  # долгая функция
+        # не хочу  долго ждать, поэтому подставляю уже когда-то выданные этой функцией данные
         if TEST:
             with open('News.get_al.output.txt') as f:
                 return f.read()
+
         al = ''
         for i in URLIST.keys():
             s = self.parce(i, URLIST[i])
@@ -119,7 +121,6 @@ class Data:
         self.read_last()
         self.words = words
         self.status = self.get_status()
-        # print(self.words, self.status)
 
     def read_last(self) -> dict:
         try:
@@ -129,7 +130,7 @@ class Data:
         except:
             self.lastd = {}
 
-    def write(self) -> None:
+    def write_to_file(self) -> None:
         swr = "{"
         for i in range(LOOKAT):
             swr += f"'{self.words[i]}':{str(i)},"
@@ -151,7 +152,7 @@ class Data:
                     status[i] = str(ch)
         return status
 
-    def draw(self) -> None:
+    def print(self) -> None:
         print('{0:_>2}|{1:_^13}|{2:_^13}'.format(" №", "слово", "перемещение"))
 
         for i in range(KVO):
@@ -170,15 +171,12 @@ while True:
     news = News()
 
     words: Words = news.get_all_words()
-    w_names = words.get_names()
-    data = Data(
-        w_names
-    )
-    words = data.words
+    w_names: list = words.get_names()
+    data = Data(w_names)
     status = data.status
     # os.system(CLEAR_COMMAND)
-    data.draw()
-    data.write()
+    data.print()
+    data.write_to_file()
 
     time.sleep(77)
 
