@@ -3,14 +3,21 @@ import requests, re
 from requests import ConnectionError
 from fake_useragent import UserAgent
 from lxml import html
-import string
-import wordcloud
+from wordcloud import WordCloud
+import matplotlib.pyplot as plt
+import nltk
 from nltk import word_tokenize, FreqDist
 from nltk.corpus import stopwords
-import nltk
+import pymorphy2
+import wordcloud
+
+morph = pymorphy2.MorphAnalyzer(lang='ru')
+
 
 
 rus_stopwords = stopwords.words('russian')
+
+
 urls = {
     'https://www.interfax.ru/news/' : '<a href=\"/\w+/\d{6,}\"><h3>\D+</h3>',
     'https://ria.ru/': '<span class=\"cell-list__item-title\">\D+/span>',
@@ -42,6 +49,7 @@ def get_data():
         try:
             r = requests.get(url[0], headers=headers)
         except ConnectionError:
+            print('Ошибка соединеня')
             continue
         # print(r.text)
         match = re.findall(url[1], r.text)
@@ -63,22 +71,49 @@ def get_data():
     return fild_data
 
 
-for text in get_data():
-    f = open('data_news.txt', encoding='utf-8')
-    all_data = [i.rstrip() for i in f.readlines()]
+def add_data_to_file():
+    with open('data_news.txt', 'w', encoding='utf-8') as f:
+        for text in get_data():
+            f.write(text)
+            f.write('\n')
+
+
+def get_data_from_file(filename='data_news.txt'):
+    f = open(filename, encoding='utf-8')
+    need_data = [i.strip() for i in f.readlines()]
     f.close()
-    if text not in all_data:
-        with open('data_news.txt', 'a', encoding='utf-8') as file:
-            file.write(text)
-            file.write('\n')
+    return need_data
 
-f = open('data_news.txt', "r", encoding='utf-8')
-text=f.read()
-text = text.lower()
-spec_chars = string.punctuation + '\n'
-text = "".join([ch for ch in text if ch not in spec_chars and ch not in stopwords.words()])
-text_tokens = word_tokenize(text)
-text = nltk.Text(text_tokens)
-fdist = FreqDist(text)
 
-print(fdist.most_common(5))
+def clear_data(): #оптимизировать эту залупу нужно
+    res = ''
+    sent = ''
+    for text in get_data_from_file():
+        sent = ''
+        for j in text.lower().split():
+                if j not in rus_stopwords:
+                    j = j.replace(',','').replace('"', '')
+                    tag_j = morph.parse(j)[0].tag
+                    norm_j = morph.normal_forms(j)[0]
+                    if 'NOUN' in tag_j:
+                        sent += norm_j + ' '
+        res += sent
+    return res
+
+
+
+def get_wordcloud(text_raw=clear_data()):
+    wordcloud = WordCloud().generate(text_raw)
+    plt.figure()
+    plt.imshow(wordcloud, interpolation="bilinear")
+    plt.axis("off")
+    plt.show()
+
+get_wordcloud()
+
+# f = open('data_news.txt', "r", encoding='utf-8')
+# text=f.read()
+# text = text.lower()
+# spec_chars = string.punctuation + '\n'
+# text = " ".join(ch for ch in text.split() if ch not in rus_stopwords)
+# print(text)
