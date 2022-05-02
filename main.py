@@ -5,18 +5,11 @@ from fake_useragent import UserAgent
 from lxml import html
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
-import nltk
-from nltk import word_tokenize, FreqDist
 from nltk.corpus import stopwords
 import pymorphy2
-import wordcloud
 
 morph = pymorphy2.MorphAnalyzer(lang='ru')
-
-
-
 rus_stopwords = stopwords.words('russian')
-
 
 urls = {
     'https://www.interfax.ru/news/' : '<a href=\"/\w+/\d{6,}\"><h3>\D+</h3>',
@@ -25,7 +18,6 @@ urls = {
     'https://www.rbc.ru/politics/?utm_source=topline':'<span class=\"item__title rm-cm-item-text\"\D+</span>',
     'https://rg.ru/news.html' : '<span class=\"b-link__inner-text\">\D+</span>',
 }
-
 
 
 def get_data():
@@ -49,7 +41,7 @@ def get_data():
         try:
             r = requests.get(url[0], headers=headers)
         except ConnectionError:
-            print('Ошибка соединеня')
+            print(f'Ошибка соединеня у {url[0]}') 
             continue
         # print(r.text)
         match = re.findall(url[1], r.text)
@@ -68,6 +60,7 @@ def get_data():
                 tree = html.fromstring(data)
                 text = tree.cssselect('div:first_child') # костыль для получения текста из под тега html
                 fild_data.append(text[0].text_content().strip())
+    fild_data = list(set(fild_data))
     return fild_data
 
 
@@ -101,19 +94,14 @@ def clear_data(): #оптимизировать эту залупу нужно
     return res
 
 
-
 def get_wordcloud(text_raw=clear_data()):
     wordcloud = WordCloud().generate(text_raw)
     plt.figure()
     plt.imshow(wordcloud, interpolation="bilinear")
     plt.axis("off")
-    plt.show()
+    plt.savefig('wordcloud')
 
+
+add_data_to_file()
 get_wordcloud()
 
-# f = open('data_news.txt', "r", encoding='utf-8')
-# text=f.read()
-# text = text.lower()
-# spec_chars = string.punctuation + '\n'
-# text = " ".join(ch for ch in text.split() if ch not in rus_stopwords)
-# print(text)

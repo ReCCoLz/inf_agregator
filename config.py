@@ -9,3 +9,14 @@ urlist = {'https://news.yandex.ru/':'data-counter=".*">(.*?)</a></h2>',
 'http://www.interfax.ru':'<a href=".*?" data-vr-headline>(.*?)</a></H3></div>'}
 
 token = '5197195042:AAEKvG9uJ1NQi150GTnTNRpSiIt_3TP7aao'
+
+
+hello_mes = """Здравствуй, Я - Агрегатор Новостей
+Чтобы получить мой список команд - напиши /help"""
+
+help_mes = """
+Вот мой список команд: 
+    /help - список команд бота
+    /start - стартовое сообщение 
+    /get - получить текущее "облако слов"
+"""
