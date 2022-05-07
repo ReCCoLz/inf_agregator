@@ -1,15 +1,19 @@
 from time import sleep
+from tkinter import N
 import requests, re
 from requests import ConnectionError
 from fake_useragent import UserAgent
 from lxml import html
+from nltk import Text
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
+from nltk import FreqDist, word_tokenize
 from nltk.corpus import stopwords
 import pymorphy2
 
 morph = pymorphy2.MorphAnalyzer(lang='ru')
 rus_stopwords = stopwords.words('russian')
+atrib = ['nomn', 'gent', 'datv', 'accs', 'ablt', 'loct', 'plur']
 
 urls = {
     'https://www.interfax.ru/news/' : '<a href=\"/\w+/\d{6,}\"><h3>\D+</h3>',
@@ -71,12 +75,36 @@ def add_data_to_file():
             f.write('\n')
 
 
+def get_var_of_word(word):
+    res = []
+    var_word = morph.parse(word)[0]
+    try:
+        for sklon in atrib:
+            sklon_word = var_word.inflect({f'{sklon}'})
+            res.append(sklon_word.word)
+    except:
+        pass
+    return res
+
 def get_data_from_file(filename='data_news.txt'):
     f = open(filename, encoding='utf-8')
     need_data = [i.strip() for i in f.readlines()]
     f.close()
     return need_data
 
+def get_news_of_word(word, num=5):
+    filt_data = set()
+    data = get_data_from_file()
+    for i in range(len(data)):
+        for var_word in get_var_of_word(word):
+            if var_word in data[i].lower().split():
+                filt_data.add(data[i])
+    if len(filt_data) == 0:
+        return ['Новости с этим словом нет.']
+    else:
+        if len(filt_data) < num:
+            return list(filt_data)[:len(filt_data)]
+        return list(filt_data)[:num]
 
 def clear_data(): #оптимизировать эту залупу нужно
     res = ''
@@ -94,14 +122,16 @@ def clear_data(): #оптимизировать эту залупу нужно
     return res
 
 
+def get_rate_words():
+    text_tokenize = word_tokenize(clear_data())
+    rate_text = FreqDist(text_tokenize)
+    fdist = FreqDist(rate_text)
+    return fdist.most_common(10)
+
 def get_wordcloud(text_raw=clear_data()):
     wordcloud = WordCloud().generate(text_raw)
     plt.figure()
     plt.imshow(wordcloud, interpolation="bilinear")
     plt.axis("off")
     plt.savefig('wordcloud')
-
-
-add_data_to_file()
-get_wordcloud()
-
+    
