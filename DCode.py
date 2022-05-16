@@ -23,7 +23,7 @@ URLIST = {'https://news.yandex.ru/': 'data-counter=".*">(.*?)</a></h2>',
           'https://rg.ru/': '<span class="b-link__inner-text">(.*?)</span>',
           'http://www.interfax.ru': '<a href=".*?" data-vr-headline>(.*?)</a></H3></div>'}
 CLEAR_LIST = ['.', ',', ':', '»', '«', '"']
-TEST = True
+TEST = False
 CLEAR_COMMAND: str = {
     'nt': 'cls',
     'posix': 'clear'
@@ -36,13 +36,12 @@ def substidution(func):
             return func(*args, **kwargs)
         if not os.path.exists(file_name):
             output = func(*args, **kwargs)
-            with open(file_name, 'w') as file:
+            with open(file_name, 'w', encoding='utf8') as file:
                 file.write(json.dumps(output))
             return output
-        with open(file_name) as f:
+        with open(file_name, encoding='utf8') as f:
             return json.loads(f.read())
     return f
-
 
 
 def clear_str(s1:str, li:list) -> str:
@@ -144,7 +143,7 @@ class Data:
 
     def read_last(self) -> dict:
         try:
-            with open('last.txt', 'r') as f:
+            with open('last.txt', 'r', encoding='utf8') as f:
                 swr = f.read()
             self.lastd = eval(swr)
         except:
@@ -156,29 +155,14 @@ class Data:
             swr += f"'{self.words[i].name}':{str(i)},"
         swr = swr[:-1]+'}'
 
-        with open('last.txt', 'w', encoding='utf-8') as f:
+        with open('last.txt', 'w', encoding='utf8') as f:
             f.write(swr)
 
     def __str__(self) -> str:
-        result = '{0:_>2}|{1:_^13}|{2:_^13}\n'.format(
-            " №", "слово", "перемещение")
+        result = '№ [перемещение] слово'
 
         for i in range(KVO):
-            t = ''
-            if self.words[i].status[0] == '+':
-                t = '\033[0;42m'
-            elif self.words[i].status[0] == '-':
-                t = '\033[0;41m'
-            else:
-                t = '\033[0m'
-
-            result += t+(
-                '{0:2d}|{1:13}|{2:^13}'.format(
-                    i+1,
-                    self.words[i].name.upper(),
-                    self.words[i].status
-                )
-            )+'\033[0m\n'
+            result += f'{i+1} [{self.words[i].status}] {self.words[i].name.upper()}\n'
 
         return result
 
@@ -194,19 +178,20 @@ class Data:
                 res = word
         return res
 
+def main():
+    result = ''
 
-while True:
     news = News()
 
     words: Words = news.get_all_words()
     data = Data(words)
-    # os.system(CLEAR_COMMAND)
-    print(data)
-    data.write_to_file()
-    # time.sleep(77)
-    grouwth_word = data.get_grouwth_word()
-    print(f'Рост {grouwth_word.status} показало слово "{grouwth_word.name}"')
-    for new in news.find_news_by_word(grouwth_word.name, 6):
-        print(new)
+    result = str(data) + '\n'
 
-    time.sleep(30)
+    data.write_to_file()
+    grouwth_word = data.get_grouwth_word()
+    result += f'Рост {grouwth_word.status} показало слово "{grouwth_word.name}"\n\n'
+    for new in news.find_news_by_word(grouwth_word.name, 6):
+        result += f'"{new}"\n\n'
+
+    return result
+    # time.sleep(30)
