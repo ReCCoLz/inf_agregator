@@ -5,7 +5,7 @@ from tkinter.tix import Tree
 import requests
 import re
 import os
-import time
+from datetime import datetime
 import pymorphy2
 import json
 
@@ -159,7 +159,7 @@ class Data:
             f.write(swr)
 
     def __str__(self) -> str:
-        result = '№ [перемещение] слово'
+        result = '№ [перемещение] слово\n'
 
         for i in range(KVO):
             result += f'{i+1} [{self.words[i].status}] {self.words[i].name.upper()}\n'
@@ -193,5 +193,9 @@ def main():
     for new in news.find_news_by_word(grouwth_word.name, 6):
         result += f'"{new}"\n\n'
 
+    with open('message.txt', 'w', encoding='utf8') as f:
+        f.write(
+            f'{int(datetime.now().timestamp())}\n{result}'
+        )
     return result
     # time.sleep(30)
